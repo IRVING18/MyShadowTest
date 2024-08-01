@@ -44,7 +44,7 @@ public class PluginHelper {
 
     public File pluginManagerFile;
 
-    public File ÅpluginZipFile;
+    public File pluginZipFile;
 
     public ExecutorService singlePool = Executors.newSingleThreadExecutor();
 
