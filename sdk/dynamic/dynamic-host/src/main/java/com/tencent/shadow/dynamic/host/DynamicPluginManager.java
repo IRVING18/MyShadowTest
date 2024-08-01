@@ -64,6 +64,16 @@ public final class DynamicPluginManager implements PluginManager {
         }
     }
 
+    @Override
+    public void getObject(Context context, long fromId, Bundle bundle, ObjectCallBack callback) {
+        if (mLogger.isInfoEnabled()) {
+            mLogger.info("getObject fromId:" + fromId + " callback:" + callback);
+        }
+        updateManagerImpl(context);
+        mUpdater.update();
+        mManagerImpl.getObject(context, fromId, bundle, callback);
+    }
+
     private void updateManagerImpl(Context context) {
         File latestManagerImplApk = mUpdater.getLatest();
         String md5 = md5File(latestManagerImplApk);

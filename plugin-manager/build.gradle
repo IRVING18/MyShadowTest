@@ -40,4 +40,6 @@ dependencies {
 
     compileOnly 'com.tencent.shadow.core:common'
     compileOnly 'com.tencent.shadow.dynamic:dynamic-host'
+    // 公共接口
+    compileOnly project(':sample-host-lib')
 }

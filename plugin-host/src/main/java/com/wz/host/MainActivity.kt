@@ -11,6 +11,7 @@ import android.widget.Toast
 import com.tencent.shadow.dynamic.host.EnterCallback
 import com.tencent.shadow.sample.host.R
 import com.wz.base_constant.Constant
+import com.wz.host.assists.AssistTestActivity
 import com.wz.host.base.HostApplication
 
 class MainActivity : Activity() {
@@ -21,6 +22,10 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         ll = findViewById<LinearLayout>(R.id.ll)
+    }
+
+    fun start_assist(view: View) {
+        startActivity(Intent(this, AssistTestActivity::class.java))
     }
 
     fun start_plugin(view: View){

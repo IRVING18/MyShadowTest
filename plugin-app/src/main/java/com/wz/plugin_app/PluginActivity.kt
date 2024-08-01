@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.ven.assists.stepper.StepManager
+import com.ven.assists.stepper.StepTag
 
 /**
  * 有道领世
@@ -27,5 +29,7 @@ class PluginActivity: AppCompatActivity() {
             })
             finish()
         }
+//        StepManager.execute(PluginPublishXHSSocial::class.java, StepTag.STEP_1, begin = true)
+//        finish()
     }
 }

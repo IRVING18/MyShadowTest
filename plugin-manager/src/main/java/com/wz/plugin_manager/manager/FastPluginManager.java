@@ -22,6 +22,7 @@ import android.content.Context;
 import android.os.RemoteException;
 import android.util.Pair;
 
+import com.tencent.shadow.core.common.InstalledApk;
 import com.tencent.shadow.core.common.Logger;
 import com.tencent.shadow.core.common.LoggerFactory;
 import com.tencent.shadow.core.manager.installplugin.InstalledPlugin;
@@ -29,6 +30,7 @@ import com.tencent.shadow.core.manager.installplugin.InstalledType;
 import com.tencent.shadow.core.manager.installplugin.PluginConfig;
 import com.tencent.shadow.dynamic.host.FailedException;
 import com.tencent.shadow.dynamic.manager.PluginManagerThatUseDynamicLoader;
+import com.tencent.shadow.sample.host.lib.inter.ObjectFactory;
 
 import org.json.JSONException;
 
@@ -45,6 +47,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import dalvik.system.DexClassLoader;
 
 public abstract class FastPluginManager extends PluginManagerThatUseDynamicLoader {
 
@@ -113,6 +117,66 @@ public abstract class FastPluginManager extends PluginManagerThatUseDynamicLoade
         return getInstalledPlugins(1).get(0);
     }
 
+    private static final String OBJECT_FACTORY_CLASS_NAME = "com.wz.plugin_app.lib.ObjectFactoryImpl";
+
+    public Object getPluginObject(InstalledPlugin installedPlugin, String partKey,
+                                  String className) throws RemoteException, TimeoutException, FailedException {
+
+        preparePlugin(installedPlugin, partKey);
+
+        InstalledPlugin.Part part = installedPlugin.getPart(partKey);
+        InstalledApk installedApk = new InstalledApk(part.pluginFile.getAbsolutePath(),
+                part.oDexDir == null ? null : part.oDexDir.getAbsolutePath(),
+                part.libraryDir == null ? null : part.libraryDir.getAbsolutePath());
+
+        DexClassLoader apkClassLoader = new DexClassLoader(
+                installedApk.apkFilePath,
+                installedApk.oDexPath,
+                installedApk.libraryPath,
+                ObjectFactory.class.getClassLoader()
+        );
+
+        try {
+            ObjectFactory objectFactory = getInterface(
+                    apkClassLoader,
+                    ObjectFactory.class,
+                    OBJECT_FACTORY_CLASS_NAME
+            );
+            return objectFactory.getObject(className);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 从apk中读取接口的实现
+     *
+     * @param clazz     接口类
+     * @param className 实现类的类名
+     * @param <T>       接口类型
+     * @return 所需接口
+     * @throws Exception
+     */
+    <T> T getInterface(DexClassLoader loader, Class<T> clazz, String className) throws Exception {
+        try {
+            Class<?> interfaceImplementClass = loader.loadClass(className);
+            Object interfaceImplement = interfaceImplementClass.newInstance();
+            return clazz.cast(interfaceImplement);
+        } catch (ClassNotFoundException | InstantiationException
+                 | ClassCastException | IllegalAccessException e) {
+            throw new Exception(e);
+        }
+    }
+
+    public void preparePlugin(InstalledPlugin installedPlugin, String partKey)
+            throws RemoteException, TimeoutException, FailedException {
+        loadPlugin(installedPlugin.UUID, partKey);
+        Map map = mPluginLoader.getLoadedPlugin();
+        Boolean isCall = (Boolean) map.get(partKey);
+        if (isCall == null || !isCall) {
+            mPluginLoader.callApplicationOnCreate(partKey);
+        }
+    }
 
     protected void callApplicationOnCreate(String partKey) throws RemoteException {
         Map map = mPluginLoader.getLoadedPlugin();
